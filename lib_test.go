@@ -4,6 +4,8 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/davecgh/go-spew/spew"
+
 	"zenithar.org/go/butcher"
 	"zenithar.org/go/butcher/hasher"
 )
@@ -13,12 +15,12 @@ func TestDefaultButcher(t *testing.T) {
 
 	out, err := b.Hash([]byte("toto"))
 	if out == "" {
-		t.Fatal("Resout should not be empty !")
+		t.Fatal("Result should not be empty !")
 	}
 	if err != nil {
 		t.Fatal("Error should be nil")
 	}
-	if !strings.HasPrefix(out, "bcrypt+sha512") {
+	if !strings.HasPrefix(out, butcher.DefaultAlgorithm) {
 		t.Fatal("Result should have a valid prefix")
 	}
 
@@ -26,6 +28,9 @@ func TestDefaultButcher(t *testing.T) {
 	if out == out2 {
 		t.Fatal("Hash should be different for same password")
 	}
+
+	spew.Dump(out)
+	spew.Dump(out2)
 }
 
 func TestButcherStrategies(t *testing.T) {
