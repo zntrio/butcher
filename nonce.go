@@ -2,9 +2,6 @@ package butcher
 
 import "crypto/rand"
 
-// NonceFactory defines the function signature that returns a salt factory
-type NonceFactory func() []byte
-
 // FixedNonce returns a nonce factory that returns the given salt
 func FixedNonce(salt []byte) func() []byte {
 	return func() []byte {
