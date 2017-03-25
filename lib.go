@@ -1,31 +1,38 @@
 package butcher
 
 import (
-	"encoding/hex"
+	"errors"
 	"fmt"
+
+	"zenithar.org/go/butcher/hasher"
+)
+
+// -----------------------------------------------------------------------------
+
+var (
+	// ErrButcherStrategyNotSupported is raised when caller try to invoke not supported algorithm
+	ErrButcherStrategyNotSupported = errors.New("butcher: given strategy is not supported")
 )
 
 // -----------------------------------------------------------------------------
 
 // Butcher defines the hasher configuration
 type Butcher struct {
-	password    []byte
-	algorithm   string
-	salt        *[]byte
-	iterations  *int
-	cpucost     *int
-	memcost     *int
-	parallelism *int
+	algorithm string
+	nonce     func() []byte
 }
 
 // -----------------------------------------------------------------------------
 
 // New butcher instance is buildded according options
-func New(algo string, options ...Option) (*Butcher, error) {
+func New(options ...Option) (*Butcher, error) {
 	var err error
 
 	// Initialize default butcher
-	butcher := Butcher{}
+	butcher := Butcher{
+		algorithm: hasher.BcryptSha512,
+		nonce:     RandomNonce(16),
+	}
 
 	// Iterates on given options
 	for _, option := range options {
@@ -35,20 +42,27 @@ func New(algo string, options ...Option) (*Butcher, error) {
 		}
 	}
 
+	// Initialize hash strategy
+	if _, ok := hasher.Strategies[butcher.algorithm]; !ok {
+		return nil, ErrButcherStrategyNotSupported
+	}
+
 	return &butcher, err
 }
 
 // -----------------------------------------------------------------------------
 
-func (b *Butcher) String() string {
-	switch b.algorithm {
-	case "scrypt":
-		return fmt.Sprintf("scrypt$%s$%d$%d$%d$%s", hex.EncodeToString(*b.salt), *b.cpucost, *b.memcost, *b.parallelism, hex.EncodeToString(b.password))
-	default:
-		if b.iterations != nil {
-			return fmt.Sprintf("%s$%s$%d$%s", b.algorithm, hex.EncodeToString(*b.salt), *b.iterations, hex.EncodeToString(b.password))
-		}
-
-		return fmt.Sprintf("%s$%s$%s", b.algorithm, hex.EncodeToString(*b.salt), hex.EncodeToString(b.password))
+// Hash the given password with the hash strategy
+func (b *Butcher) Hash(password []byte) (string, error) {
+	strategy, ok := hasher.Strategies[b.algorithm]
+	if !ok {
+		return "", ErrButcherStrategyNotSupported
 	}
+
+	hashedPassword, err := strategy(b.nonce()).Hash(password)
+	if err != nil {
+		return "", err
+	}
+
+	return fmt.Sprintf("%s$%s", b.algorithm, hashedPassword), nil
 }
