@@ -11,42 +11,10 @@ func WithAlgorithm(algo string) Option {
 	}
 }
 
-// WithSalt defines the salt value for the hashing password
-func WithSalt(value []byte) Option {
+// WithNonce defines the nonce factory value for salt generation
+func WithNonce(factory func() []byte) Option {
 	return func(b *Butcher) error {
-		b.salt = &value
-		return nil
-	}
-}
-
-// WithIterations defines the iteration count to use in password derivation
-func WithIterations(value int) Option {
-	return func(b *Butcher) error {
-		b.iterations = &value
-		return nil
-	}
-}
-
-// WithCPUCost defines the CPU cost in password derivation
-func WithCPUCost(value int) Option {
-	return func(b *Butcher) error {
-		b.cpucost = &value
-		return nil
-	}
-}
-
-// WithMemoryCost defines the memory cost in password derivation
-func WithMemoryCost(value int) Option {
-	return func(b *Butcher) error {
-		b.memcost = &value
-		return nil
-	}
-}
-
-// WithParallelism defines the parallelism value in password derivation
-func WithParallelism(value int) Option {
-	return func(b *Butcher) error {
-		b.parallelism = &value
+		b.nonce = factory
 		return nil
 	}
 }
