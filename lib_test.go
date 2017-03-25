@@ -52,3 +52,43 @@ func TestButcherStrategies(t *testing.T) {
 	}
 
 }
+
+func BenchmarkBcryptBlake2b512(b *testing.B) {
+	butch, _ := butcher.New(butcher.WithAlgorithm(hasher.BcryptBlake2b512))
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		butch.Hash([]byte("toto"))
+	}
+}
+
+func BenchmarkPbkdf2Blake2b512(b *testing.B) {
+	butch, _ := butcher.New(butcher.WithAlgorithm(hasher.Pbkdf2Blake2b512))
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		butch.Hash([]byte("toto"))
+	}
+}
+
+func BenchmarkPbkdf2Keccac512(b *testing.B) {
+	butch, _ := butcher.New(butcher.WithAlgorithm(hasher.Pbkdf2Keccak512))
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		butch.Hash([]byte("toto"))
+	}
+}
+
+func BenchmarkPbkdf2Sha512(b *testing.B) {
+	butch, _ := butcher.New(butcher.WithAlgorithm(hasher.Pbkdf2Sha512))
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		butch.Hash([]byte("toto"))
+	}
+}
+
+func BenchmarkBcryptSha512(b *testing.B) {
+	butch, _ := butcher.New(butcher.WithAlgorithm(hasher.BcryptSha512))
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		butch.Hash([]byte("toto"))
+	}
+}
