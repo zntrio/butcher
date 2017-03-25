@@ -9,6 +9,18 @@ import (
 
 // -----------------------------------------------------------------------------
 
+const (
+	// DefaultAlgorithm defines the default algorithm to use when not specified
+	DefaultAlgorithm = hasher.Pbkdf2Blake2b512
+)
+
+var (
+	// DefaultNonce defines the default nonce generation factory to use when not specified
+	DefaultNonce = RandomNonce(64)
+)
+
+// -----------------------------------------------------------------------------
+
 var (
 	// ErrButcherStrategyNotSupported is raised when caller try to invoke not supported algorithm
 	ErrButcherStrategyNotSupported = errors.New("butcher: given strategy is not supported")
@@ -30,8 +42,8 @@ func New(options ...Option) (*Butcher, error) {
 
 	// Initialize default butcher
 	butcher := Butcher{
-		algorithm: hasher.BcryptSha512,
-		nonce:     RandomNonce(16),
+		algorithm: DefaultAlgorithm,
+		nonce:     DefaultNonce,
 	}
 
 	// Iterates on given options
