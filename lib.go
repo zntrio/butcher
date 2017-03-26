@@ -76,5 +76,10 @@ func (b *Butcher) Hash(password []byte) (string, error) {
 		return "", err
 	}
 
-	return fmt.Sprintf("%s$%s", b.algorithm, hashedPassword), nil
+	switch b.algorithm {
+	case hasher.Argon2i:
+		return fmt.Sprintf("%s", hashedPassword[1:]), nil
+	default:
+		return fmt.Sprintf("%s$%s", b.algorithm, hashedPassword), nil
+	}
 }

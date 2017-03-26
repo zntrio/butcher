@@ -2,7 +2,7 @@ package hasher
 
 import (
 	"crypto/hmac"
-	"encoding/hex"
+	"encoding/base64"
 	"fmt"
 	"hash"
 	"sync"
@@ -41,5 +41,5 @@ func (d *bcryptDeriver) Hash(password []byte) (string, error) {
 		return "", err
 	}
 
-	return fmt.Sprintf("%s$%d$%s", hex.EncodeToString(d.salt), d.cost, hex.EncodeToString(hashedPassword)), nil
+	return fmt.Sprintf("$c=%d$%s$%s", d.cost, base64.RawStdEncoding.EncodeToString(d.salt), base64.RawStdEncoding.EncodeToString(hashedPassword)), nil
 }

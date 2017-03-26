@@ -8,6 +8,8 @@ import (
 )
 
 const (
+	// Argon2i defines the argon2i hashing algorithm
+	Argon2i = "argon2i"
 	// BcryptBlake2b512 defines bcrypt+blake2b-512 hashing algorithm
 	BcryptBlake2b512 = "bcrypt+blake2b-512"
 	// Pbkdf2Blake2b512 defines pbkdf2+blake2b-512 hashing algorithm
@@ -22,6 +24,10 @@ const (
 
 // Strategies defines available hashing strategies
 var Strategies = map[string]func([]byte) Strategy{
+	Argon2i: func(salt []byte) Strategy {
+		s, _ := newArgon2Deriver(salt)
+		return s
+	},
 	BcryptBlake2b512: func(salt []byte) Strategy {
 		s, _ := newBcryptDeriver(blake2b.New512, salt, 12)
 		return s

@@ -35,13 +35,16 @@ func TestDefaultButcher(t *testing.T) {
 
 func TestButcherStrategies(t *testing.T) {
 
-	strategies := []string{hasher.BcryptBlake2b512, hasher.Pbkdf2Blake2b512, hasher.Pbkdf2Keccak512, hasher.Pbkdf2Sha512, hasher.BcryptSha512}
+	strategies := []string{hasher.Argon2i, hasher.BcryptBlake2b512, hasher.Pbkdf2Blake2b512, hasher.Pbkdf2Keccak512, hasher.Pbkdf2Sha512, hasher.BcryptSha512}
 
 	for _, algo := range strategies {
 		b, _ := butcher.New(butcher.WithAlgorithm(algo))
 		out, err := b.Hash([]byte("toto"))
+
+		spew.Dump(out)
+
 		if out == "" {
-			t.Fatal("Resout should not be empty !")
+			t.Fatal("Result should not be empty !")
 		}
 		if err != nil {
 			t.Fatal("Error should be nil")

@@ -1,7 +1,7 @@
 package hasher
 
 import (
-	"encoding/hex"
+	"encoding/base64"
 	"fmt"
 	"hash"
 
@@ -27,5 +27,5 @@ func newPbkdf2Deriver(hash func() hash.Hash, salt []byte, iterations int, keyLen
 
 func (d *pbkdf2Deriver) Hash(password []byte) (string, error) {
 	hashedPassword := pbkdf2.Key(password, d.salt, d.iterations, d.keylen, d.h)
-	return fmt.Sprintf("%s$%d$%s", hex.EncodeToString(d.salt), d.iterations, hex.EncodeToString(hashedPassword)), nil
+	return fmt.Sprintf("$i=%d$%s$%s", d.iterations, base64.RawStdEncoding.EncodeToString(d.salt), base64.RawStdEncoding.EncodeToString(hashedPassword)), nil
 }
