@@ -4,8 +4,6 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/davecgh/go-spew/spew"
-
 	"zenithar.org/go/butcher"
 	"zenithar.org/go/butcher/hasher"
 )
@@ -29,8 +27,21 @@ func TestDefaultButcher(t *testing.T) {
 		t.Fatal("Hash should be different for same password")
 	}
 
-	spew.Dump(out)
-	spew.Dump(out2)
+	ok, err := butcher.Verify([]byte(out), []byte("toto"))
+	if err != nil {
+		t.Fatal("Hash verification should not return an error")
+	}
+	if !ok {
+		t.Fatal("Hash verification should be valid")
+	}
+
+	ok, err = butcher.Verify([]byte(out2), []byte("toto"))
+	if err != nil {
+		t.Fatal("Hash verification should not return an error")
+	}
+	if !ok {
+		t.Fatal("Hash verification should be valid")
+	}
 }
 
 func TestButcherStrategies(t *testing.T) {
@@ -40,8 +51,6 @@ func TestButcherStrategies(t *testing.T) {
 	for _, algo := range strategies {
 		b, _ := butcher.New(butcher.WithAlgorithm(algo))
 		out, err := b.Hash([]byte("toto"))
-
-		spew.Dump(out)
 
 		if out == "" {
 			t.Fatal("Result should not be empty !")
