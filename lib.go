@@ -7,7 +7,7 @@ import (
 	"fmt"
 	"strings"
 
-	"zenithar.org/go/butcher/hasher"
+	"go.zenithar.org/butcher/hasher"
 )
 
 // -----------------------------------------------------------------------------
