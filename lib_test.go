@@ -4,8 +4,8 @@ import (
 	"strings"
 	"testing"
 
-	"zenithar.org/go/butcher"
-	"zenithar.org/go/butcher/hasher"
+	"go.zenithar.org/butcher"
+	"go.zenithar.org/butcher/hasher"
 )
 
 func TestDefaultButcher(t *testing.T) {
