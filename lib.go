@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"strings"
+	"sync"
 
 	"go.zenithar.org/butcher/hasher"
 )
@@ -20,6 +21,12 @@ const (
 var (
 	// DefaultNonce defines the default nonce generation factory to use when not specified
 	DefaultNonce = RandomNonce(64)
+)
+
+var (
+	// Default butcher instance
+	defaultInstance *Butcher
+	once            sync.Once
 )
 
 // -----------------------------------------------------------------------------
@@ -126,4 +133,13 @@ func Verify(encoded []byte, password []byte) (bool, error) {
 // NeedsUpgrade returns the password hash upgrade need when DefaultAlgorithm is changed
 func NeedsUpgrade(encoded []byte) bool {
 	return strings.HasPrefix(string(encoded), DefaultAlgorithm)
+}
+
+// Hash password using default instance
+func Hash(password []byte) (string, error) {
+	// Initialize default butcher instance
+	once.Do(func() {
+		defaultInstance, _ = New()
+	})
+	return defaultInstance.Hash(password)
 }
