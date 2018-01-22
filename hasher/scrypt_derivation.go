@@ -66,5 +66,5 @@ func (d *scryptDeriver) Hash(password []byte) (string, error) {
 		return "", err
 	}
 
-	return fmt.Sprintf("$n=%d,r=%d,p=%d$%s$%s", d.n, d.r, d.p, base64.RawStdEncoding.EncodeToString(d.salt), base64.RawStdEncoding.EncodeToString(hashedPassword)), nil
+	return fmt.Sprintf("$n=%d,r=%d,p=%d,l=%d$%s$%s", d.n, d.r, d.p, d.keyLen, base64.RawStdEncoding.EncodeToString(d.salt), base64.RawStdEncoding.EncodeToString(hashedPassword)), nil
 }

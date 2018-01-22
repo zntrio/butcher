@@ -50,11 +50,12 @@ func (d *argonDeriver) Hash(password []byte) (string, error) {
 	hash := argon2.Key([]byte(password), d.salt, d.time, d.memory, d.threads, d.keyLen)
 
 	return fmt.Sprintf(
-		"v=%d$m=%d,t=%d,p=%d$%s$%s",
+		"v=%d$m=%d,t=%d,p=%d,l=%d$%s$%s",
 		argon2.Version,
 		d.memory,
 		d.time,
 		d.threads,
+		d.keyLen,
 		base64.RawStdEncoding.EncodeToString(d.salt),
 		base64.RawStdEncoding.EncodeToString(hash),
 	), nil

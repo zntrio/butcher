@@ -20,8 +20,12 @@
 package butcher_test
 
 import (
+	"fmt"
 	"strings"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
 	"go.zenithar.org/butcher"
 	"go.zenithar.org/butcher/hasher"
@@ -86,6 +90,8 @@ func TestButcherStrategies(t *testing.T) {
 			t.Fatal("Hash should be different for same password")
 		}
 
+		t.Logf("%s", out2)
+
 		ok, err := butcher.Verify([]byte(out2), []byte("toto"))
 		if err != nil {
 			t.Logf("Given Hash: %s", out2)
@@ -99,6 +105,54 @@ func TestButcherStrategies(t *testing.T) {
 	}
 
 }
+
+func TestUnknownStrategy(t *testing.T) {
+	_, err := butcher.New(butcher.WithAlgorithm("foo"))
+	require.Error(t, err, "Erraor should not be nil when using unknown strategy")
+	assert.EqualError(t, err, butcher.ErrButcherStrategyNotSupported.Error())
+}
+
+func TestHashEncoding(t *testing.T) {
+	fixtures := []struct {
+		hash        []byte
+		pwd         []byte
+		expectedErr error
+	}{
+		{
+			hash:        []byte("$$$"),
+			expectedErr: butcher.ErrorButcherInvalidHash,
+		},
+		{
+			hash:        []byte("$$$$"),
+			expectedErr: butcher.ErrButcherStrategyNotSupported,
+		},
+		{
+			hash:        []byte("scrypt+blake2b-512$$n=17,r=8,p=1,l=64$$"),
+			expectedErr: butcher.ErrorButcherInvalidHash,
+		},
+		{ // Should be valid
+			hash:        []byte("scrypt+blake2b-512$$n=17,r=8,p=1,l=64$GUqitrTR9hDm4VbNXdSZvO0vcS73hD+MTNdLJNrCOxxM0iqPFmynihLQh92GnZe/Hr27SqW92f02KSSn5xUvTg$"),
+			expectedErr: butcher.ErrorButcherInvalidHash,
+		},
+		{ // Should be valid
+			hash:        []byte("scrypt+blake2b-512$$n=17,r=8,p=1,l=64$GUqitrTR9hDm4VbNXdSZvO0vcS73hD+MTNdLJNrCOxxM0iqPFmynihLQh92GnZe/Hr27SqW92f02KSSn5xUvTg$cC+VseY+A/3zQK0jfNuRuoaAkJ8anf1vYQKrLxMBmw7aCwCilYC6hy3WBsk3jNbSmfKUb6Gs16DcknJp8X21mA"),
+			pwd:         []byte("toto"),
+			expectedErr: nil,
+		},
+	}
+
+	for _, f := range fixtures {
+		_, err := butcher.Verify(f.hash, f.pwd)
+		if f.expectedErr != nil {
+			require.Error(t, err, fmt.Sprintf("Error should be raised as expected, hash=%s", f.hash))
+			require.Exactly(t, err, f.expectedErr)
+		} else {
+			require.NoError(t, err, "No error should occurs")
+		}
+	}
+}
+
+// -------------------------------------------------------------------------------
 
 func BenchmarkPbkdf2Blake2b512(b *testing.B) {
 	butch, _ := butcher.New(butcher.WithAlgorithm(hasher.Pbkdf2Blake2b512))

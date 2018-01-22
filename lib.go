@@ -53,6 +53,8 @@ var (
 var (
 	// ErrButcherStrategyNotSupported is raised when caller try to invoke not supported algorithm
 	ErrButcherStrategyNotSupported = errors.New("butcher: given strategy is not supported")
+	// ErrorButcherInvalidHash is raised when encoded is invalid
+	ErrorButcherInvalidHash = errors.New("bucher: invalid hash")
 )
 
 // -----------------------------------------------------------------------------
@@ -112,6 +114,11 @@ func (b *Butcher) Hash(password []byte) (string, error) {
 func Verify(encoded []byte, password []byte) (bool, error) {
 	parts := strings.SplitN(string(encoded), "$", 5)
 
+	// Check part length
+	if len(parts) != 5 {
+		return false, ErrorButcherInvalidHash
+	}
+
 	// Check supported algorithm
 	strategy, ok := hasher.Strategies[parts[0]]
 	if !ok {
@@ -119,9 +126,17 @@ func Verify(encoded []byte, password []byte) (bool, error) {
 	}
 
 	// Extract salt
+	if len(parts[3]) == 0 {
+		return false, ErrorButcherInvalidHash
+	}
 	salt, err := base64.RawStdEncoding.DecodeString(parts[3])
 	if err != nil {
 		return false, fmt.Errorf("butcher: error occurs when decoding salt part, %v", err)
+	}
+
+	// Check hash password length
+	if len(parts[4]) == 0 {
+		return false, ErrorButcherInvalidHash
 	}
 
 	// Hash given password
