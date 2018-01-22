@@ -1,3 +1,22 @@
+/*
+ * The MIT License (MIT)
+ * Copyright (c) 2018 Thibault NORMAND
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy of this software
+ * and associated documentation files (the "Software"), to deal in the Software without restriction,
+ * including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense,
+ * and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so,
+ * subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in all copies or substantial
+ * portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED
+ * TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
+ * THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
+ * TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+ */
+
 package butcher_test
 
 import (
@@ -46,7 +65,7 @@ func TestDefaultButcher(t *testing.T) {
 
 func TestButcherStrategies(t *testing.T) {
 
-	strategies := []string{hasher.Argon2i, hasher.Pbkdf2Blake2b512, hasher.Pbkdf2Keccak512, hasher.Pbkdf2Sha512 /*, hasher.BcryptSha512, hasher.BcryptBlake2b512*/}
+	strategies := []string{hasher.Argon2i, hasher.Pbkdf2Blake2b512, hasher.Pbkdf2Keccak512, hasher.Pbkdf2Sha512, hasher.ScryptBlake2b512}
 
 	for _, algo := range strategies {
 		b, _ := butcher.New(butcher.WithAlgorithm(algo))
@@ -81,14 +100,6 @@ func TestButcherStrategies(t *testing.T) {
 
 }
 
-/*func BenchmarkBcryptBlake2b512(b *testing.B) {
-	butch, _ := butcher.New(butcher.WithAlgorithm(hasher.BcryptBlake2b512))
-	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
-		butch.Hash([]byte("toto"))
-	}
-}*/
-
 func BenchmarkPbkdf2Blake2b512(b *testing.B) {
 	butch, _ := butcher.New(butcher.WithAlgorithm(hasher.Pbkdf2Blake2b512))
 	b.ResetTimer()
@@ -113,10 +124,10 @@ func BenchmarkPbkdf2Sha512(b *testing.B) {
 	}
 }
 
-/*func BenchmarkBcryptSha512(b *testing.B) {
-	butch, _ := butcher.New(butcher.WithAlgorithm(hasher.BcryptSha512))
+func BenchmarkScryptBlake2b512(b *testing.B) {
+	butch, _ := butcher.New(butcher.WithAlgorithm(hasher.ScryptBlake2b512))
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		butch.Hash([]byte("toto"))
 	}
-}*/
+}
