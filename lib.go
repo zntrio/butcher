@@ -86,13 +86,7 @@ func (b *Butcher) Hash(password []byte) (string, error) {
 		return "", err
 	}
 
-	switch b.algorithm {
-	case hasher.Argon2i:
-		// Remove '$' prefix of argon2 representation
-		return fmt.Sprintf("%s", hashedPassword[1:]), nil
-	default:
-		return fmt.Sprintf("%s$%s", b.algorithm, hashedPassword), nil
-	}
+	return fmt.Sprintf("%s$%s", b.algorithm, hashedPassword), nil
 }
 
 // Verify cleartext password with encoded one
@@ -117,16 +111,10 @@ func Verify(encoded []byte, password []byte) (bool, error) {
 		return false, fmt.Errorf("butcher: unable to hash given password, %v", err)
 	}
 
-	// TODO: Move to a specific encoder
-	switch parts[0] {
-	case hasher.Argon2i:
-		// Remove '$' prefix of argon2 representation
-		hashedPassword = fmt.Sprintf("%s", hashedPassword[1:])
-	default:
-		hashedPassword = fmt.Sprintf("%s$%s", parts[0], hashedPassword)
-	}
+	// Serialize
+	hashedPassword = fmt.Sprintf("%s$%s", parts[0], hashedPassword)
 
-	// Compare using time constant operation
+	// Time constant compare
 	return subtle.ConstantTimeCompare(encoded, []byte(hashedPassword)) == 1, nil
 }
 
