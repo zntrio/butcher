@@ -19,7 +19,52 @@
 
 package hasher
 
-// Strategy defines hash algorithm strategy contract
-type Strategy interface {
-	Hash([]byte) (string, error)
+import (
+	"crypto/hmac"
+	"encoding/base64"
+	"fmt"
+	"hash"
+	"sync"
+
+	"golang.org/x/crypto/scrypt"
+)
+
+type scryptDeriver struct {
+	mu     sync.Mutex
+	h      hash.Hash
+	salt   []byte
+	n      int
+	r      int
+	p      int
+	keyLen int
+}
+
+func newScryptDeriver(hash func() hash.Hash, salt []byte, cost int) (Strategy, error) {
+	c := &scryptDeriver{
+		h:      hmac.New(hash, salt),
+		salt:   salt,
+		n:      17,
+		r:      8,
+		p:      1,
+		keyLen: 64,
+		mu:     sync.Mutex{},
+	}
+	return c, nil
+}
+
+func (d *scryptDeriver) digest(data []byte) []byte {
+	d.mu.Lock()
+	defer d.mu.Unlock()
+	d.h.Reset()
+	d.h.Write(data)
+	return d.h.Sum(nil)
+}
+
+func (d *scryptDeriver) Hash(password []byte) (string, error) {
+	hashedPassword, err := scrypt.Key(d.digest(password), d.salt, 1<<uint(d.n), d.r, d.p, d.keyLen)
+	if err != nil {
+		return "", err
+	}
+
+	return fmt.Sprintf("$n=%d,r=%d,p=%d$%s$%s", d.n, d.r, d.p, base64.RawStdEncoding.EncodeToString(d.salt), base64.RawStdEncoding.EncodeToString(hashedPassword)), nil
 }
