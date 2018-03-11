@@ -20,20 +20,25 @@
 package butcher
 
 // Option is the butcher option setting function signature
-type Option func(*Butcher) error
+type Option func(*Butcher)
 
 // WithAlgorithm defines the algorithm to use for hashing password
 func WithAlgorithm(algo string) Option {
-	return func(b *Butcher) error {
+	return func(b *Butcher) {
 		b.algorithm = algo
-		return nil
 	}
 }
 
-// WithNonce defines the nonce factory value for salt generation
-func WithNonce(factory func() []byte) Option {
-	return func(b *Butcher) error {
-		b.nonce = factory
-		return nil
+// WithSaltFunc defines the salt factory value for salt generation
+func WithSaltFunc(factory func() []byte) Option {
+	return func(b *Butcher) {
+		b.saltFunc = factory
+	}
+}
+
+// WithPepper defines the password peppering value
+func WithPepper(value []byte) Option {
+	return func(b *Butcher) {
+		b.pepper = value
 	}
 }

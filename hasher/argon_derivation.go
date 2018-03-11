@@ -36,13 +36,21 @@ type argonDeriver struct {
 
 func newArgon2Deriver(salt []byte) (Strategy, error) {
 	c := &argonDeriver{
-		salt:    salt,
-		time:    4,
-		memory:  32 * 1024,
+		salt: salt,
+		// OWASP Recommandations
+		time: 40,
+		// OWASP Recommandations
+		memory:  128 * 1024,
 		threads: 4,
 		keyLen:  64,
 	}
 	return c, nil
+}
+
+// -----------------------------------------------------------------------------
+
+func (d *argonDeriver) Prefix() string {
+	return fmt.Sprintf("v=%d$m=%d,t=%d,p=%d", argon2.Version, d.memory, d.time, d.threads)
 }
 
 func (d *argonDeriver) Hash(password []byte) (string, error) {
@@ -50,11 +58,8 @@ func (d *argonDeriver) Hash(password []byte) (string, error) {
 	hash := argon2.Key([]byte(password), d.salt, d.time, d.memory, d.threads, d.keyLen)
 
 	return fmt.Sprintf(
-		"v=%d$m=%d,t=%d,p=%d$%s$%s",
-		argon2.Version,
-		d.memory,
-		d.time,
-		d.threads,
+		"%s$%s$%s",
+		d.Prefix(),
 		base64.RawStdEncoding.EncodeToString(d.salt),
 		base64.RawStdEncoding.EncodeToString(hash),
 	), nil

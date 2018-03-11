@@ -21,5 +21,6 @@ package hasher
 
 // Strategy defines hash algorithm strategy contract
 type Strategy interface {
+	Prefix() string
 	Hash([]byte) (string, error)
 }

@@ -24,7 +24,6 @@ import (
 	"hash"
 
 	"golang.org/x/crypto/blake2b"
-	"golang.org/x/crypto/sha3"
 )
 
 const (
@@ -32,40 +31,32 @@ const (
 	Argon2i = "argon2i"
 	//ScryptBlake2b512 defines scrypt+blake2b-512 hashing algorithm
 	ScryptBlake2b512 = "scrypt+blake2b-512"
-	// Pbkdf2Blake2b512 defines pbkdf2+blake2b-512 hashing algorithm
-	Pbkdf2Blake2b512 = "pbkdf2+blake2b-512"
-	// Pbkdf2Sha512 defines pbkdf2+sha512 hashing algorithm
-	Pbkdf2Sha512 = "pbkdf2+sha512"
-	// Pbkdf2Keccak512 defines pbkdf2+sha3-512 hashing algorithm
-	Pbkdf2Keccak512 = "pbkdf2+sha3-512"
+	// Pbkdf2HmacSha512 defines pbkdf2+hmac-sha512 hashing algorithm
+	Pbkdf2HmacSha512 = "pbkdf2+hmac-sha512"
+)
+
+const (
+	pbkdf2Iterations = 100000
 )
 
 // Strategies defines available hashing strategies
-var Strategies = map[string]func([]byte) Strategy{
-	Argon2i: func(salt []byte) Strategy {
-		s, _ := newArgon2Deriver(salt)
+var Strategies = map[string]func(func() []byte) Strategy{
+	Argon2i: func(salt func() []byte) Strategy {
+		s, _ := newArgon2Deriver(salt())
 		return s
 	},
-	ScryptBlake2b512: func(salt []byte) Strategy {
+	ScryptBlake2b512: func(salt func() []byte) Strategy {
 		s, _ := newScryptDeriver(func() hash.Hash {
-			h, _ := blake2b.New512(nil)
+			h, err := blake2b.New512(nil)
+			if err != nil {
+				panic(err.Error())
+			}
 			return h
-		}, salt, 12)
+		}, salt())
 		return s
 	},
-	Pbkdf2Blake2b512: func(salt []byte) Strategy {
-		s, _ := newPbkdf2Deriver(func() hash.Hash {
-			h, _ := blake2b.New512(nil)
-			return h
-		}, salt, 50000, blake2b.Size)
-		return s
-	},
-	Pbkdf2Sha512: func(salt []byte) Strategy {
-		s, _ := newPbkdf2Deriver(sha512.New, salt, 50000, sha512.Size)
-		return s
-	},
-	Pbkdf2Keccak512: func(salt []byte) Strategy {
-		s, _ := newPbkdf2Deriver(sha3.New512, salt, 50000, 64)
+	Pbkdf2HmacSha512: func(salt func() []byte) Strategy {
+		s, _ := newPbkdf2Deriver(sha512.New, salt(), pbkdf2Iterations, sha512.Size)
 		return s
 	},
 }

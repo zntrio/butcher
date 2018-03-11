@@ -20,96 +20,67 @@
 package butcher_test
 
 import (
-	"strings"
 	"testing"
 
 	"go.zenithar.org/butcher"
 	"go.zenithar.org/butcher/hasher"
+
+	"github.com/stretchr/testify/require"
 )
 
 func TestDefaultButcher(t *testing.T) {
-	b, _ := butcher.New()
 
-	out, err := b.Hash([]byte("toto"))
-	if out == "" {
-		t.Fatal("Result should not be empty !")
-	}
-	if err != nil {
-		t.Fatal("Error should be nil")
-	}
-	if !strings.HasPrefix(out, butcher.DefaultAlgorithm) {
-		t.Fatal("Result should have a valid prefix")
-	}
+	var (
+		password = []byte("foo")
+	)
 
-	out2, _ := b.Hash([]byte("toto"))
-	if out == out2 {
-		t.Fatal("Hash should be different for same password")
-	}
+	encoded, err := butcher.Hash(password)
+	require.NoError(t, err, "Password encoding should not raise error")
+	require.NotNil(t, encoded, "Encoded password should not be nil")
 
-	ok, err := butcher.Verify([]byte(out), []byte("toto"))
-	if err != nil {
-		t.Fatal("Hash verification should not return an error")
-	}
-	if !ok {
-		t.Fatal("Hash verification should be valid")
-	}
+	valid, err := butcher.Verify([]byte(encoded), password)
+	require.NoError(t, err, "PAssword verification should not raise error")
+	require.True(t, valid, "Password should be valid")
 
-	ok, err = butcher.Verify([]byte(out2), []byte("toto"))
-	if err != nil {
-		t.Fatal("Hash verification should not return an error")
-	}
-	if !ok {
-		t.Fatal("Hash verification should be valid")
-	}
+	upgrade := butcher.NeedsUpgrade([]byte(encoded))
+	require.False(t, upgrade, "Password should not need upgrades")
 }
 
 func TestButcherStrategies(t *testing.T) {
 
-	strategies := []string{hasher.Argon2i, hasher.Pbkdf2Blake2b512, hasher.Pbkdf2Keccak512, hasher.Pbkdf2Sha512, hasher.ScryptBlake2b512}
+	strategies := []string{hasher.Argon2i, hasher.ScryptBlake2b512, hasher.Pbkdf2HmacSha512}
 
 	for _, algo := range strategies {
-		b, _ := butcher.New(butcher.WithAlgorithm(algo))
+		b, err := butcher.New(
+			butcher.WithAlgorithm(algo),
+			butcher.WithPepper([]byte("foobar")),
+			butcher.WithSaltFunc(butcher.RandomNonce(8)),
+		)
+		require.NoError(t, err, "Error should not be raised")
+		require.NotNil(t, b, "Butcher instance should not be nil")
+
 		out, err := b.Hash([]byte("toto"))
+		require.NoError(t, err, "Hash should not raise error")
+		require.NotEmpty(t, out, "Encoded password should not be empty")
 
-		if out == "" {
-			t.Fatal("Result should not be empty !")
-		}
-		if err != nil {
-			t.Fatal("Error should be nil")
-		}
-		if !strings.HasPrefix(out, algo) {
-			t.Fatal("Result should have a valid prefix")
-		}
+		out2, err := b.Hash([]byte("toto"))
+		require.NoError(t, err, "Hash should not raise error")
+		require.NotEmpty(t, out, "Encoded password should not be empty")
+		require.NotEqual(t, out, out2, "Same password should not have same output")
 
-		out2, _ := b.Hash([]byte("toto"))
-		if out == out2 {
-			t.Fatal("Hash should be different for same password")
-		}
+		ok, err := b.Verify([]byte(out2), []byte("toto"))
+		require.NoError(t, err, "Password validation should not raise an error")
+		require.True(t, ok, "Password should be valid")
 
-		ok, err := butcher.Verify([]byte(out2), []byte("toto"))
-		if err != nil {
-			t.Logf("Given Hash: %s", out2)
-			t.Logf("Error : %v", err)
-			t.Fatal("Hash verification should not return an error")
-		}
-		if !ok {
-			t.Logf("Given Hash: %s", out2)
-			t.Fatal("Hash verification should be valid")
-		}
+		ok, err = b.Verify([]byte(out2), []byte("titi"))
+		require.NoError(t, err, "Password validation mismatch should not raise an error")
+		require.False(t, ok, "Password should not be valid")
 	}
 
 }
 
-func BenchmarkPbkdf2Blake2b512(b *testing.B) {
-	butch, _ := butcher.New(butcher.WithAlgorithm(hasher.Pbkdf2Blake2b512))
-	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
-		butch.Hash([]byte("toto"))
-	}
-}
-
-func BenchmarkPbkdf2Keccac512(b *testing.B) {
-	butch, _ := butcher.New(butcher.WithAlgorithm(hasher.Pbkdf2Keccak512))
+func BenchmarkArgon2i(b *testing.B) {
+	butch, _ := butcher.New(butcher.WithAlgorithm(hasher.Argon2i))
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		butch.Hash([]byte("toto"))
@@ -117,7 +88,7 @@ func BenchmarkPbkdf2Keccac512(b *testing.B) {
 }
 
 func BenchmarkPbkdf2Sha512(b *testing.B) {
-	butch, _ := butcher.New(butcher.WithAlgorithm(hasher.Pbkdf2Sha512))
+	butch, _ := butcher.New(butcher.WithAlgorithm(hasher.Pbkdf2HmacSha512))
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		butch.Hash([]byte("toto"))

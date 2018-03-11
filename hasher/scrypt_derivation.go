@@ -20,7 +20,6 @@
 package hasher
 
 import (
-	"crypto/hmac"
 	"encoding/base64"
 	"fmt"
 	"hash"
@@ -39,9 +38,9 @@ type scryptDeriver struct {
 	keyLen int
 }
 
-func newScryptDeriver(hash func() hash.Hash, salt []byte, cost int) (Strategy, error) {
+func newScryptDeriver(hash func() hash.Hash, salt []byte) (Strategy, error) {
 	c := &scryptDeriver{
-		h:      hmac.New(hash, salt),
+		h:      hash(),
 		salt:   salt,
 		n:      17,
 		r:      8,
@@ -60,11 +59,17 @@ func (d *scryptDeriver) digest(data []byte) []byte {
 	return d.h.Sum(nil)
 }
 
+// -----------------------------------------------------------------------------
+
 func (d *scryptDeriver) Hash(password []byte) (string, error) {
 	hashedPassword, err := scrypt.Key(d.digest(password), d.salt, 1<<uint(d.n), d.r, d.p, d.keyLen)
 	if err != nil {
 		return "", err
 	}
 
-	return fmt.Sprintf("$n=%d,r=%d,p=%d$%s$%s", d.n, d.r, d.p, base64.RawStdEncoding.EncodeToString(d.salt), base64.RawStdEncoding.EncodeToString(hashedPassword)), nil
+	return fmt.Sprintf("%s$%s$%s", d.Prefix(), base64.RawStdEncoding.EncodeToString(d.salt), base64.RawStdEncoding.EncodeToString(hashedPassword)), nil
+}
+
+func (d *scryptDeriver) Prefix() string {
+	return fmt.Sprintf("$n=%d,r=%d,p=%d", d.n, d.r, d.p)
 }

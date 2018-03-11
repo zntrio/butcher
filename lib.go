@@ -34,12 +34,12 @@ import (
 
 const (
 	// DefaultAlgorithm defines the default algorithm to use when not specified
-	DefaultAlgorithm = hasher.Pbkdf2Blake2b512
+	DefaultAlgorithm = hasher.ScryptBlake2b512
 )
 
 var (
-	// DefaultNonce defines the default nonce generation factory to use when not specified
-	DefaultNonce = RandomNonce(64)
+	// DefaultSaltFunc defines the default salt generation factory to use when not specified
+	DefaultSaltFunc = RandomNonce(32)
 )
 
 var (
@@ -60,7 +60,9 @@ var (
 // Butcher defines the hasher configuration
 type Butcher struct {
 	algorithm string
-	nonce     func() []byte
+	strategy  hasher.Strategy
+	saltFunc  func() []byte
+	pepper    []byte
 }
 
 // -----------------------------------------------------------------------------
@@ -72,21 +74,22 @@ func New(options ...Option) (*Butcher, error) {
 	// Initialize default butcher
 	butcher := Butcher{
 		algorithm: DefaultAlgorithm,
-		nonce:     DefaultNonce,
+		saltFunc:  DefaultSaltFunc,
+		pepper:    nil,
 	}
 
 	// Iterates on given options
 	for _, option := range options {
-		err = option(&butcher)
-		if err != nil {
-			break
-		}
+		option(&butcher)
 	}
 
 	// Initialize hash strategy
 	if _, ok := hasher.Strategies[butcher.algorithm]; !ok {
 		return nil, ErrButcherStrategyNotSupported
 	}
+
+	// Assign strategy to instance
+	butcher.strategy = hasher.Strategies[butcher.algorithm](butcher.saltFunc)
 
 	return &butcher, err
 }
@@ -95,21 +98,32 @@ func New(options ...Option) (*Butcher, error) {
 
 // Hash the given password with the hash strategy
 func (b *Butcher) Hash(password []byte) (string, error) {
+
+	// Check supported algorithm
 	strategy, ok := hasher.Strategies[b.algorithm]
 	if !ok {
 		return "", ErrButcherStrategyNotSupported
 	}
 
-	hashedPassword, err := strategy(b.nonce()).Hash(password)
+	// Peppering password
+	var peppered []byte
+	peppered = append(peppered, password...)
+	if len(b.pepper) > 0 {
+		peppered = append(peppered, b.pepper...)
+	}
+
+	// Hash password
+	hashedPassword, err := strategy(b.saltFunc).Hash(peppered)
 	if err != nil {
 		return "", err
 	}
 
+	// Return result
 	return fmt.Sprintf("%s$%s", b.algorithm, hashedPassword), nil
 }
 
 // Verify cleartext password with encoded one
-func Verify(encoded []byte, password []byte) (bool, error) {
+func (b *Butcher) Verify(encoded []byte, password []byte) (bool, error) {
 	parts := strings.SplitN(string(encoded), "$", 5)
 
 	// Check supported algorithm
@@ -124,8 +138,15 @@ func Verify(encoded []byte, password []byte) (bool, error) {
 		return false, fmt.Errorf("butcher: error occurs when decoding salt part, %v", err)
 	}
 
+	// Peppering password
+	var peppered []byte
+	peppered = append(peppered, password...)
+	if len(b.pepper) > 0 {
+		peppered = append(peppered, b.pepper...)
+	}
+
 	// Hash given password
-	hashedPassword, err := strategy(FixedNonce(salt)()).Hash(password)
+	hashedPassword, err := strategy(FixedNonce(salt)).Hash(peppered)
 	if err != nil {
 		return false, fmt.Errorf("butcher: unable to hash given password, %v", err)
 	}
@@ -138,15 +159,29 @@ func Verify(encoded []byte, password []byte) (bool, error) {
 }
 
 // NeedsUpgrade returns the password hash upgrade need when DefaultAlgorithm is changed
-func NeedsUpgrade(encoded []byte) bool {
-	return strings.HasPrefix(string(encoded), DefaultAlgorithm)
+func (b *Butcher) NeedsUpgrade(encoded []byte) bool {
+	return strings.HasPrefix(string(encoded), fmt.Sprintf("%s%s", b.algorithm, b.strategy.Prefix()))
 }
+
+// -----------------------------------------------------------------------------
 
 // Hash password using default instance
 func Hash(password []byte) (string, error) {
-	// Initialize default butcher instance
+	return defaultInstance.Hash(password)
+}
+
+// Verify password using default instance
+func Verify(encoded []byte, password []byte) (bool, error) {
+	return defaultInstance.Verify(encoded, password)
+}
+
+// NeedsUpgrade returns the password hash upgrade need when DefaultAlgorithm is changed
+func NeedsUpgrade(encoded []byte) bool {
+	return defaultInstance.NeedsUpgrade(encoded)
+}
+
+func init() {
 	once.Do(func() {
 		defaultInstance, _ = New()
 	})
-	return defaultInstance.Hash(password)
 }

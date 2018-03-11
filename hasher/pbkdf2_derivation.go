@@ -44,7 +44,13 @@ func newPbkdf2Deriver(hash func() hash.Hash, salt []byte, iterations int, keyLen
 	return c, nil
 }
 
+// -----------------------------------------------------------------------------
+
+func (d *pbkdf2Deriver) Prefix() string {
+	return fmt.Sprintf("$i=%d,l=%d", d.iterations, d.keylen)
+}
+
 func (d *pbkdf2Deriver) Hash(password []byte) (string, error) {
 	hashedPassword := pbkdf2.Key(password, d.salt, d.iterations, d.keylen, d.h)
-	return fmt.Sprintf("$i=%d,l=%d$%s$%s", d.iterations, d.keylen, base64.RawStdEncoding.EncodeToString(d.salt), base64.RawStdEncoding.EncodeToString(hashedPassword)), nil
+	return fmt.Sprintf("%s$%s$%s", d.Prefix(), base64.RawStdEncoding.EncodeToString(d.salt), base64.RawStdEncoding.EncodeToString(hashedPassword)), nil
 }
