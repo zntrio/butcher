@@ -26,15 +26,18 @@ import (
 	"golang.org/x/crypto/argon2"
 )
 
+type kdFunc func(password, salt []byte, time, memory uint32, threads uint8, keyLen uint32) []byte
+
 type argonDeriver struct {
 	salt    []byte
 	time    uint32
 	memory  uint32
 	threads uint8
 	keyLen  uint32
+	kdf     kdFunc
 }
 
-func newArgon2Deriver(salt []byte) (Strategy, error) {
+func newArgon2Deriver(salt []byte, kdf kdFunc) (Strategy, error) {
 	c := &argonDeriver{
 		salt: salt,
 		// OWASP Recommandations
@@ -43,6 +46,7 @@ func newArgon2Deriver(salt []byte) (Strategy, error) {
 		memory:  128 * 1024,
 		threads: 4,
 		keyLen:  64,
+		kdf:     kdf,
 	}
 	return c, nil
 }
@@ -55,7 +59,7 @@ func (d *argonDeriver) Prefix() string {
 
 func (d *argonDeriver) Hash(password []byte) (string, error) {
 	// Return hash encoded argon2i
-	hash := argon2.Key([]byte(password), d.salt, d.time, d.memory, d.threads, d.keyLen)
+	hash := d.kdf([]byte(password), d.salt, d.time, d.memory, d.threads, d.keyLen)
 
 	return fmt.Sprintf(
 		"%s$%s$%s",

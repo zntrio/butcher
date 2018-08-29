@@ -23,10 +23,13 @@ import (
 	"crypto/sha512"
 	"hash"
 
+	"golang.org/x/crypto/argon2"
 	"golang.org/x/crypto/blake2b"
 )
 
 const (
+	// Argon2id defines the argon2i hashing algorithm
+	Argon2id = "argon2id"
 	// Argon2i defines the argon2i hashing algorithm
 	Argon2i = "argon2i"
 	//ScryptBlake2b512 defines scrypt+blake2b-512 hashing algorithm
@@ -41,8 +44,12 @@ const (
 
 // Strategies defines available hashing strategies
 var Strategies = map[string]func(func() []byte) Strategy{
+	Argon2id: func(salt func() []byte) Strategy {
+		s, _ := newArgon2Deriver(salt(), argon2.IDKey)
+		return s
+	},
 	Argon2i: func(salt func() []byte) Strategy {
-		s, _ := newArgon2Deriver(salt())
+		s, _ := newArgon2Deriver(salt(), argon2.Key)
 		return s
 	},
 	ScryptBlake2b512: func(salt func() []byte) Strategy {

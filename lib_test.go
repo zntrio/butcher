@@ -20,6 +20,7 @@
 package butcher_test
 
 import (
+	"fmt"
 	"testing"
 
 	"go.zenithar.org/butcher"
@@ -39,7 +40,7 @@ func TestDefaultButcher(t *testing.T) {
 	require.NotNil(t, encoded, "Encoded password should not be nil")
 
 	valid, err := butcher.Verify([]byte(encoded), password)
-	require.NoError(t, err, "PAssword verification should not raise error")
+	require.NoError(t, err, "Password verification should not raise error")
 	require.True(t, valid, "Password should be valid")
 
 	upgrade := butcher.NeedsUpgrade([]byte(encoded))
@@ -48,13 +49,13 @@ func TestDefaultButcher(t *testing.T) {
 
 func TestButcherStrategies(t *testing.T) {
 
-	strategies := []string{hasher.Argon2i, hasher.ScryptBlake2b512, hasher.Pbkdf2HmacSha512}
+	strategies := []string{hasher.Argon2id, hasher.Argon2i, hasher.ScryptBlake2b512, hasher.Pbkdf2HmacSha512}
 
 	for _, algo := range strategies {
 		b, err := butcher.New(
 			butcher.WithAlgorithm(algo),
 			butcher.WithPepper([]byte("foobar")),
-			butcher.WithSaltFunc(butcher.RandomNonce(8)),
+			butcher.WithSaltFunc(butcher.RandomNonce(32)),
 		)
 		require.NoError(t, err, "Error should not be raised")
 		require.NotNil(t, b, "Butcher instance should not be nil")
@@ -62,6 +63,8 @@ func TestButcherStrategies(t *testing.T) {
 		out, err := b.Hash([]byte("toto"))
 		require.NoError(t, err, "Hash should not raise error")
 		require.NotEmpty(t, out, "Encoded password should not be empty")
+
+		fmt.Printf("%s\n", out)
 
 		out2, err := b.Hash([]byte("toto"))
 		require.NoError(t, err, "Hash should not raise error")
@@ -77,6 +80,14 @@ func TestButcherStrategies(t *testing.T) {
 		require.False(t, ok, "Password should not be valid")
 	}
 
+}
+
+func BenchmarkArgon2id(b *testing.B) {
+	butch, _ := butcher.New(butcher.WithAlgorithm(hasher.Argon2id))
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		butch.Hash([]byte("toto"))
+	}
 }
 
 func BenchmarkArgon2i(b *testing.B) {
