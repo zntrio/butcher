@@ -1,30 +1,32 @@
 /*
  * The MIT License (MIT)
- * Copyright (c) 2018 Thibault NORMAND
+ * Copyright (c) 2019 Thibault NORMAND
  *
- * Permission is hereby granted, free of charge, to any person obtaining a copy of this software
- * and associated documentation files (the "Software"), to deal in the Software without restriction,
- * including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense,
- * and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so,
- * subject to the following conditions:
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
  *
- * The above copyright notice and this permission notice shall be included in all copies or substantial
- * portions of the Software.
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
  *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED
- * TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
- * THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
- * TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+ * THE SOFTWARE.
  */
 
 package butcher
 
 import (
 	"crypto/subtle"
-	"encoding/base64"
 	"errors"
 	"fmt"
-	"strings"
 	"sync"
 
 	"go.zenithar.org/butcher/hasher"
@@ -34,7 +36,7 @@ import (
 
 const (
 	// DefaultAlgorithm defines the default algorithm to use when not specified
-	DefaultAlgorithm = hasher.ScryptBlake2b512
+	DefaultAlgorithm = hasher.Argon2id
 )
 
 var (
@@ -59,7 +61,7 @@ var (
 
 // Butcher defines the hasher configuration
 type Butcher struct {
-	algorithm string
+	algorithm hasher.Algorithm
 	strategy  hasher.Strategy
 	saltFunc  func() []byte
 	pepper    []byte
@@ -113,29 +115,31 @@ func (b *Butcher) Hash(password []byte) (string, error) {
 	}
 
 	// Hash password
-	hashedPassword, err := strategy(b.saltFunc).Hash(peppered)
+	meta, err := strategy(b.saltFunc).Hash(peppered)
 	if err != nil {
 		return "", err
 	}
 
+	// Assign algorithm
+	meta.Algorithm = uint8(b.algorithm)
+
 	// Return result
-	return fmt.Sprintf("%s$%s", b.algorithm, hashedPassword), nil
+	return meta.Encode()
 }
 
 // Verify cleartext password with encoded one
 func (b *Butcher) Verify(encoded []byte, password []byte) (bool, error) {
-	parts := strings.SplitN(string(encoded), "$", 5)
 
-	// Check supported algorithm
-	strategy, ok := hasher.Strategies[parts[0]]
-	if !ok {
-		return false, ErrButcherStrategyNotSupported
+	// Decode from string
+	m, err := hasher.Decode(encoded)
+	if err != nil {
+		return false, err
 	}
 
-	// Extract salt
-	salt, err := base64.RawStdEncoding.DecodeString(parts[3])
-	if err != nil {
-		return false, fmt.Errorf("butcher: error occurs when decoding salt part, %v", err)
+	// Check supported algorithm
+	strategy, ok := hasher.Strategies[hasher.Algorithm(m.Algorithm)]
+	if !ok {
+		return false, ErrButcherStrategyNotSupported
 	}
 
 	// Peppering password
@@ -146,13 +150,19 @@ func (b *Butcher) Verify(encoded []byte, password []byte) (bool, error) {
 	}
 
 	// Hash given password
-	hashedPassword, err := strategy(FixedNonce(salt)).Hash(peppered)
+	pmeta, err := strategy(FixedNonce(m.Salt)).Hash(peppered)
 	if err != nil {
 		return false, fmt.Errorf("butcher: unable to hash given password, %v", err)
 	}
 
-	// Serialize
-	hashedPassword = fmt.Sprintf("%s$%s", parts[0], hashedPassword)
+	// Assign same algorithm
+	pmeta.Algorithm = m.Algorithm
+
+	// Encode given password
+	hashedPassword, err := pmeta.Encode()
+	if err != nil {
+		return false, fmt.Errorf("butcher: unable to encode given password, %v", err)
+	}
 
 	// Time constant compare
 	return subtle.ConstantTimeCompare(encoded, []byte(hashedPassword)) == 1, nil
@@ -160,7 +170,7 @@ func (b *Butcher) Verify(encoded []byte, password []byte) (bool, error) {
 
 // NeedsUpgrade returns the password hash upgrade need when DefaultAlgorithm is changed
 func (b *Butcher) NeedsUpgrade(encoded []byte) bool {
-	return strings.HasPrefix(string(encoded), fmt.Sprintf("%s%s", b.algorithm, b.strategy.Prefix()))
+	return false
 }
 
 // -----------------------------------------------------------------------------

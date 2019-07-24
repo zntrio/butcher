@@ -21,30 +21,55 @@
  * THE SOFTWARE.
  */
 
-package butcher
+package hasher
 
-import "go.zenithar.org/butcher/hasher"
+import (
+	"encoding/base64"
+	"fmt"
 
-// Option is the butcher option setting function signature
-type Option func(*Butcher)
+	"github.com/ugorji/go/codec"
+)
 
-// WithAlgorithm defines the algorithm to use for hashing password
-func WithAlgorithm(algo hasher.Algorithm) Option {
-	return func(b *Butcher) {
-		b.algorithm = algo
-	}
+var (
+	cborHandle = new(codec.CborHandle)
+)
+
+// Metadata represents hasher result
+type Metadata struct {
+	_struct bool `codec:",toarray"` //encode struct as an array
+
+	Algorithm uint8
+	Version   uint8
+	Salt      []byte
+	Hash      []byte
 }
 
-// WithSaltFunc defines the salt factory value for salt generation
-func WithSaltFunc(factory func() []byte) Option {
-	return func(b *Butcher) {
-		b.saltFunc = factory
+// Encode metadata as BASE64URL CBOR payload
+func (m *Metadata) Encode() (string, error) {
+	// Encode as CBOR
+	var bs []byte
+	if err := codec.NewEncoderBytes(&bs, cborHandle).Encode(m); err != nil {
+		return "", err
 	}
+
+	// Return encoded struct
+	return base64.RawStdEncoding.EncodeToString(bs), nil
 }
 
-// WithPepper defines the password peppering value
-func WithPepper(value []byte) Option {
-	return func(b *Butcher) {
-		b.pepper = value
+// Decode metadata from string
+func Decode(encoded []byte) (*Metadata, error) {
+	// Decode base64
+	input, err := base64.RawStdEncoding.DecodeString(string(encoded))
+	if err != nil {
+		return nil, fmt.Errorf("butcher: unable to decode given metadata: %v", err)
 	}
+
+	// Decode as list
+	meta := &Metadata{}
+	if err := codec.NewDecoderBytes(input, cborHandle).Decode(meta); err != nil {
+		return nil, fmt.Errorf("butcher: unable to deserialize metadata: %v", err)
+	}
+
+	// Rebuild metadata instance
+	return meta, nil
 }
