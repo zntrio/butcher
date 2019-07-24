@@ -6,18 +6,16 @@ Status: Prod ready
 
 Algorithms supported :
 
-  * Argon2id
-  * Argon2i
-  * Scrypt+Blake2b-512 (default)
+  * Argon2id (default)
+  * Scrypt+Blake2b-512 
   * PBKDF2+SHA512
 
 ## Output samples
 
 ```sh
-'argon2id$v=19$m=131072,t=40,p=4$2n9BPk6oCzuWZBg8ltSLTxGSyvkPTW0gVI10Fn6TBYE$xK0LQ6cGdDZD7stQUzl+NjKfk6caYiZoFwL7Dot/AUEESRYkKzuLJFT/j/tSIhE6Gzus1IOo/RgijvcPWE9G8A'
-'argon2i$v=19$m=131072,t=40,p=4$IlB2zl1fUTzZizr8FUgDubbl5yF0dB/zC2RchXovOXQ$mNcv8RmwXzIJmgxveTEMaGiAZj5DGfn/HDr+BmbPW6dbKDNC49nm18wTfOl73Yte+v4/nC95QM8bB2800lwC3Q'
-'scrypt+blake2b-512$$n=17,r=8,p=1$GS8+Iyg3Qd7SWn+b2fuabHIHRScvxHo5eAAhtmX358Q$GH+XENsAQX6Pl4ga9zR1L31zcKZ4utOCierkBA1XTRPSUaPDisR6xGBYSqoqW8JADVtzOQb0u5J8ynlYLpsChg'
-'pbkdf2+hmac-sha512$$i=100000,l=64$qPzwCau0nzCGGw+T+o0Y+D6CVCCkwnZ0LT7S7xc87y4$tOfeS2h+Xw63P/61gBKpPyeLgQ+1aQZTkYb12DbT4FB/zIppE7my+NVlm4L2OwHaUj+oq3tTmbmHK1+TXqsKGg'
+'hAETWCB5IAJc8618VI9POngh6g0+rkEbUj/7pxZaAKuxPoRfilhA5+q1E+wifRoxLpEX7acA48KMmD/7OPJb5cTjxGP91Hv9z3vEBNOb095WPBo5yLn1w9mPnkfgKSv6MWKJRG0mGg'
+'hAMBWCBD/40V1xzT/Kt0/40y0aeg60eHOyJFROiHuWkMvBIehlhA5U1h9I9fMSASOAcz4JpEQHEhwJGUlg8WpvqRnSG5gjruaa7LvNa7bMEHi1Qk5aVfpsisJBMlfxO5UaoLe1BC+A'
+'hAIBWCBosL5P+aF/j2PmrIcE8W1Gxq+I2tMic0ON4xz1ZJkgr1hAUhaZ/2tI02iwD1H2DqTafepgdYfCHauWOzwkgTQsIcwvTTs1M8puQ5+UXl2cUA9f10EtjzM7vwaAHWU71Rrwhw'
 ```
 
 ## Advices
