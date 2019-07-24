@@ -4,6 +4,8 @@ Butcher for progressive hashing password
 
 Status: Prod ready
 
+Follow compliance from [OWASP Password Storage](https://cheatsheetseries.owasp.org/cheatsheets/Password_Storage_Cheat_Sheet.html) requirements.
+
 Algorithms supported :
 
   * Argon2id (default)
