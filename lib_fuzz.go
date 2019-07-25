@@ -23,7 +23,7 @@
  * THE SOFTWARE.
  */
 
-package hasher
+package butcher
 
 // Fuzz usage:
 //   go get github.com/dvyukov/go-fuzz/...
@@ -35,7 +35,7 @@ func Fuzz(data []byte) int {
 		if hResult != "" {
 			panic("hResult != '' on error")
 		}
-		return 0
+		return 2
 	}
 	valid, err := Verify([]byte(hResult), data)
 	if err != nil {

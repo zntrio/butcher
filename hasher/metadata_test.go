@@ -1,5 +1,3 @@
-// +build gofuzz
-
 /*
  * The MIT License (MIT)
  * Copyright (c) 2019 Thibault NORMAND
@@ -26,30 +24,45 @@
 package hasher
 
 import (
-	"bytes"
-
-	"github.com/davecgh/go-spew/spew"
+	"strings"
+	"testing"
 )
 
-// Fuzz usage:
-//   go get github.com/dvyukov/go-fuzz/...
-//
-//   go-fuzz-build go.zenithar.org/butcher/hasher && go-fuzz -bin=./hasher-fuzz.zip -workdir=/tmp/hasher-fuzz
-func Fuzz(data []byte) int {
-	b := bytes.NewReader(data)
-
-	m, err := Decode(b)
-	if err != nil {
-		if m != nil {
-			panic("m != on error")
-		}
-		return 0
+func TestMetadata_Decode(t *testing.T) {
+	tcl := []struct {
+		name        string
+		expectedErr bool
+	}{
+		{
+			name:        "hAMBWCAURSV6zNwJgY9MtRymp",
+			expectedErr: true,
+		},
+		{
+			name:        "hAMBWCAURSV6zNwJgY9MtRymp+jWqQdq4Q0fhhhczHIJ84hLFFhApev/iws0lknOXrn6S7oHHfURSraeIa8ysojC8WRIFFaZoRi/h3Um/ykq1G76kIWC5I/Fe05qM66CDBHOqEGPSA",
+			expectedErr: false,
+		},
+		{
+			name:        "hAEBWCBnIz1y1hBbnAwny+oWiR2r+YTcUDJkZ8NCr46Solr9zlhABAqWOJwohFZk0Oz2HvzdK4IjKwTyZx+wYLJxixhQH86ehBI666XiIkRXAK9p3/vH98we+awVEdBZGNLnuka3/g",
+			expectedErr: false,
+		},
+		{
+			name:        "hAIBWCAE69ESLmWerPebeBHAD8KyDncqt+1U+QF3LscPP5AV2VhA3G2KtkK5jwvfeZ8MD+PFWJiA0ufq8ZrBbEe7IeqcHORQrOPaElDM4R6AiVCKU2YQAL1PvFf3wYJVDAQz6pnjew",
+			expectedErr: false,
+		},
 	}
 
-	if _, packErr := m.Pack(); packErr != nil {
-		spew.Dump(m)
-		panic(packErr)
+	for _, tc := range tcl {
+		t.Run(tc.name, func(t *testing.T) {
+			m, err := Decode(strings.NewReader(tc.name))
+			if err != nil && !tc.expectedErr {
+				t.Errorf("error raised, got %v", err)
+			}
+			if m != nil && tc.expectedErr {
+				t.Errorf("metadata should be nil, got %v", m)
+			}
+			if m == nil && tc.expectedErr == false {
+				t.Errorf("metadata should not be nil, got %v", m)
+			}
+		})
 	}
-
-	return 1
 }

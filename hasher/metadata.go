@@ -28,12 +28,14 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
+	"regexp"
 
 	"github.com/ugorji/go/codec"
 )
 
 var (
 	cborHandle = new(codec.CborHandle)
+	metaFormat = regexp.MustCompile("^[-A-Za-z0-9/+]{138}$")
 )
 
 // Metadata represents hasher result
@@ -47,8 +49,8 @@ type Metadata struct {
 	Hash      []byte
 }
 
-// Encode metadata as BASE64URL CBOR payload
-func (m *Metadata) Encode() (string, error) {
+// Pack metadata as BASE64URL CBOR payload
+func (m *Metadata) Pack() (string, error) {
 	// Encode as CBOR
 	var bs []byte
 	if err := codec.NewEncoderBytes(&bs, cborHandle).Encode(m); err != nil {
@@ -65,6 +67,11 @@ func Decode(r io.Reader) (*Metadata, error) {
 	buf, err := ioutil.ReadAll(r)
 	if err != nil {
 		return nil, fmt.Errorf("butcher: unable to read encoded metadata: %v", err)
+	}
+
+	// Check format
+	if !metaFormat.Match(buf) {
+		return nil, fmt.Errorf("butcher: invalid hash format")
 	}
 
 	// Decode base64

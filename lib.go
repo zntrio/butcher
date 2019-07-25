@@ -126,7 +126,7 @@ func (b *Butcher) Hash(password []byte) (string, error) {
 	}
 
 	// Return result
-	return meta.Encode()
+	return meta.Pack()
 }
 
 // Verify cleartext password with encoded one
@@ -157,7 +157,7 @@ func (b *Butcher) Verify(encoded []byte, password []byte) (bool, error) {
 	}
 
 	// Encode given password
-	hashedPassword, err := pmeta.Encode()
+	hashedPassword, err := pmeta.Pack()
 	if err != nil {
 		return false, fmt.Errorf("butcher: unable to encode given password, %v", err)
 	}
