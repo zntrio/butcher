@@ -36,7 +36,9 @@ func FixedNonce(salt []byte) func() []byte {
 func RandomNonce(length int) func() []byte {
 	return func() []byte {
 		salt := make([]byte, length)
-		rand.Read(salt)
+		if _, err := rand.Read(salt); err != nil {
+			panic(err)
+		}
 		return salt
 	}
 }

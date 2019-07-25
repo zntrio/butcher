@@ -23,10 +23,6 @@
 
 package hasher
 
-import (
-	"golang.org/x/crypto/argon2"
-)
-
 type kdFunc func(password, salt []byte, time, memory uint32, threads uint8, keyLen uint32) []byte
 
 type argonDeriver struct {
@@ -40,10 +36,8 @@ type argonDeriver struct {
 
 func newArgon2Deriver(salt []byte, kdf kdFunc) (Strategy, error) {
 	return &argonDeriver{
-		salt: salt,
-		// OWASP Recommandations
-		time: 40,
-		// OWASP Recommandations
+		salt:    salt,
+		time:    6,
 		memory:  128 * 1024,
 		threads: 4,
 		keyLen:  64,
@@ -58,8 +52,9 @@ func (d *argonDeriver) Hash(password []byte) (*Metadata, error) {
 	hash := d.kdf([]byte(password), d.salt, d.time, d.memory, d.threads, d.keyLen)
 
 	return &Metadata{
-		Version: uint8(argon2.Version),
-		Salt:    d.salt,
-		Hash:    hash,
+		Algorithm: uint8(Argon2id),
+		Version:   uint8(1),
+		Salt:      d.salt,
+		Hash:      hash,
 	}, nil
 }

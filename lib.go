@@ -24,6 +24,7 @@
 package butcher
 
 import (
+	"bytes"
 	"crypto/subtle"
 	"errors"
 	"fmt"
@@ -37,6 +38,8 @@ import (
 const (
 	// DefaultAlgorithm defines the default algorithm to use when not specified
 	DefaultAlgorithm = hasher.Argon2id
+	// ExpectedAlgorithmVersion defines the lower supported version of the hashing strategy
+	ExpectedAlgorithmVersion = uint8(0x01)
 )
 
 var (
@@ -53,8 +56,10 @@ var (
 // -----------------------------------------------------------------------------
 
 var (
-	// ErrButcherStrategyNotSupported is raised when caller try to invoke not supported algorithm
-	ErrButcherStrategyNotSupported = errors.New("butcher: given strategy is not supported")
+	// ErrInvalidHash is raised when caller try to invoke not supported algorithm
+	ErrInvalidHash = errors.New("butcher: invalid hash")
+	// ErrStrategyNotSupported is raised when caller try to invoke not supported algorithm
+	ErrStrategyNotSupported = errors.New("butcher: given strategy is not supported")
 )
 
 // -----------------------------------------------------------------------------
@@ -87,7 +92,7 @@ func New(options ...Option) (*Butcher, error) {
 
 	// Initialize hash strategy
 	if _, ok := hasher.Strategies[butcher.algorithm]; !ok {
-		return nil, ErrButcherStrategyNotSupported
+		return nil, ErrStrategyNotSupported
 	}
 
 	// Assign strategy to instance
@@ -104,7 +109,7 @@ func (b *Butcher) Hash(password []byte) (string, error) {
 	// Check supported algorithm
 	strategy, ok := hasher.Strategies[b.algorithm]
 	if !ok {
-		return "", ErrButcherStrategyNotSupported
+		return "", ErrStrategyNotSupported
 	}
 
 	// Peppering password
@@ -120,26 +125,22 @@ func (b *Butcher) Hash(password []byte) (string, error) {
 		return "", err
 	}
 
-	// Assign algorithm
-	meta.Algorithm = uint8(b.algorithm)
-
 	// Return result
 	return meta.Encode()
 }
 
 // Verify cleartext password with encoded one
 func (b *Butcher) Verify(encoded []byte, password []byte) (bool, error) {
-
 	// Decode from string
-	m, err := hasher.Decode(encoded)
+	m, err := hasher.Decode(bytes.NewReader(encoded))
 	if err != nil {
-		return false, err
+		return false, ErrInvalidHash
 	}
 
 	// Check supported algorithm
 	strategy, ok := hasher.Strategies[hasher.Algorithm(m.Algorithm)]
 	if !ok {
-		return false, ErrButcherStrategyNotSupported
+		return false, ErrStrategyNotSupported
 	}
 
 	// Peppering password
@@ -155,9 +156,6 @@ func (b *Butcher) Verify(encoded []byte, password []byte) (bool, error) {
 		return false, fmt.Errorf("butcher: unable to hash given password, %v", err)
 	}
 
-	// Assign same algorithm
-	pmeta.Algorithm = m.Algorithm
-
 	// Encode given password
 	hashedPassword, err := pmeta.Encode()
 	if err != nil {
@@ -170,7 +168,12 @@ func (b *Butcher) Verify(encoded []byte, password []byte) (bool, error) {
 
 // NeedsUpgrade returns the password hash upgrade need when DefaultAlgorithm is changed
 func (b *Butcher) NeedsUpgrade(encoded []byte) bool {
-	return false
+	// Decode from string
+	m, err := hasher.Decode(bytes.NewReader(encoded))
+	if err != nil {
+		return false
+	}
+	return hasher.Algorithm(m.Algorithm) != DefaultAlgorithm && m.Version < ExpectedAlgorithmVersion
 }
 
 // -----------------------------------------------------------------------------

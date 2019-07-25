@@ -50,8 +50,9 @@ func newPbkdf2Deriver(hash func() hash.Hash, salt []byte, iterations int, keyLen
 
 func (d *pbkdf2Deriver) Hash(password []byte) (*Metadata, error) {
 	return &Metadata{
-		Version: uint8(1),
-		Salt:    d.salt,
-		Hash:    pbkdf2.Key(password, d.salt, d.iterations, d.keylen, d.h),
+		Algorithm: uint8(Pbkdf2HmacSha512),
+		Version:   uint8(1),
+		Salt:      d.salt,
+		Hash:      pbkdf2.Key(password, d.salt, d.iterations, d.keylen, d.h),
 	}, nil
 }

@@ -61,9 +61,10 @@ func (d *scryptDeriver) Hash(password []byte) (*Metadata, error) {
 	}
 
 	return &Metadata{
-		Version: uint8(1),
-		Salt:    d.salt,
-		Hash:    hashedPassword,
+		Algorithm: uint8(ScryptBlake2b512),
+		Version:   uint8(1),
+		Salt:      d.salt,
+		Hash:      hashedPassword,
 	}, nil
 }
 
@@ -73,6 +74,9 @@ func (d *scryptDeriver) digest(data []byte) []byte {
 	d.mu.Lock()
 	defer d.mu.Unlock()
 	d.h.Reset()
-	d.h.Write(data)
+	_, err := d.h.Write(data)
+	if err != nil {
+		panic(err)
+	}
 	return d.h.Sum(nil)
 }

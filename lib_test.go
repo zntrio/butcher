@@ -97,6 +97,7 @@ func BenchmarkArgon2id(b *testing.B) {
 	butch, _ := butcher.New(butcher.WithAlgorithm(hasher.Argon2id))
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
+		// nolint
 		butch.Hash([]byte("toto"))
 	}
 }
@@ -105,6 +106,7 @@ func BenchmarkPbkdf2Sha512(b *testing.B) {
 	butch, _ := butcher.New(butcher.WithAlgorithm(hasher.Pbkdf2HmacSha512))
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
+		// nolint
 		butch.Hash([]byte("toto"))
 	}
 }
@@ -113,6 +115,7 @@ func BenchmarkScryptBlake2b512(b *testing.B) {
 	butch, _ := butcher.New(butcher.WithAlgorithm(hasher.ScryptBlake2b512))
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
+		// nolint
 		butch.Hash([]byte("toto"))
 	}
 }

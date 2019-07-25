@@ -26,6 +26,8 @@ package hasher
 import (
 	"encoding/base64"
 	"fmt"
+	"io"
+	"io/ioutil"
 
 	"github.com/ugorji/go/codec"
 )
@@ -36,6 +38,7 @@ var (
 
 // Metadata represents hasher result
 type Metadata struct {
+	// nolint
 	_struct bool `codec:",toarray"` //encode struct as an array
 
 	Algorithm uint8
@@ -57,9 +60,15 @@ func (m *Metadata) Encode() (string, error) {
 }
 
 // Decode metadata from string
-func Decode(encoded []byte) (*Metadata, error) {
+func Decode(r io.Reader) (*Metadata, error) {
+	// Read all
+	buf, err := ioutil.ReadAll(r)
+	if err != nil {
+		return nil, fmt.Errorf("butcher: unable to read encoded metadata: %v", err)
+	}
+
 	// Decode base64
-	input, err := base64.RawStdEncoding.DecodeString(string(encoded))
+	input, err := base64.RawStdEncoding.DecodeString(string(buf))
 	if err != nil {
 		return nil, fmt.Errorf("butcher: unable to decode given metadata: %v", err)
 	}
