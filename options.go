@@ -17,7 +17,7 @@
 
 package butcher
 
-import "zntr.io/butcher/hasher"
+import "github.com/zntrio/butcher/hasher"
 
 // Option is the butcher option setting function signature
 type Option func(*Butcher)

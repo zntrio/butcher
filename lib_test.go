@@ -21,8 +21,8 @@ import (
 	"fmt"
 	"testing"
 
-	"zntr.io/butcher"
-	"zntr.io/butcher/hasher"
+	"github.com/zntrio/butcher"
+	"github.com/zntrio/butcher/hasher"
 
 	"github.com/stretchr/testify/require"
 )
@@ -45,7 +45,7 @@ func TestDefaultButcher(t *testing.T) {
 }
 
 func TestButcherStrategies(t *testing.T) {
-	strategies := []hasher.Algorithm{hasher.Argon2id, hasher.ScryptBlake2b512, hasher.Pbkdf2HmacSha512}
+	strategies := []hasher.Algorithm{hasher.Argon2id, hasher.Scrypt, hasher.Pbkdf2HmacSha512}
 
 	for _, algo := range strategies {
 		algorithm := algo
@@ -101,8 +101,8 @@ func BenchmarkPbkdf2Sha512(b *testing.B) {
 	}
 }
 
-func BenchmarkScryptBlake2b512(b *testing.B) {
-	butch, _ := butcher.New(butcher.WithAlgorithm(hasher.ScryptBlake2b512))
+func BenchmarkScryptSha512(b *testing.B) {
+	butch, _ := butcher.New(butcher.WithAlgorithm(hasher.Scrypt))
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		// nolint

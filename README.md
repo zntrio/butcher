@@ -9,7 +9,7 @@ Follow compliance from [OWASP Password Storage](https://cheatsheetseries.owasp.o
 Algorithms supported :
 
   * Argon2id (default)
-  * Scrypt+Blake2b-512 
+  * Scrypt 
   * PBKDF2+SHA512
 
 ## Output samples

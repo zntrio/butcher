@@ -18,15 +18,10 @@
 package hasher
 
 import (
-	"hash"
-	"sync"
-
 	"golang.org/x/crypto/scrypt"
 )
 
 type scryptDeriver struct {
-	mu     sync.Mutex
-	h      hash.Hash
 	salt   []byte
 	n      int
 	r      int
@@ -34,43 +29,28 @@ type scryptDeriver struct {
 	keyLen int
 }
 
-func newScryptDeriver(hash func() hash.Hash, salt []byte) (Strategy, error) {
+func newScryptDeriver(salt []byte) (Strategy, error) {
 	return &scryptDeriver{
-		h:      hash(),
 		salt:   salt,
 		n:      17,
 		r:      8,
 		p:      1,
 		keyLen: 64,
-		mu:     sync.Mutex{},
 	}, nil
 }
 
 // -----------------------------------------------------------------------------
 
 func (d *scryptDeriver) Hash(password []byte) (*Metadata, error) {
-	hashedPassword, err := scrypt.Key(d.digest(password), d.salt, 1<<uint(d.n), d.r, d.p, d.keyLen)
+	hashedPassword, err := scrypt.Key(password, d.salt, 1<<uint(d.n), d.r, d.p, d.keyLen)
 	if err != nil {
 		return nil, err
 	}
 
 	return &Metadata{
-		Algorithm: uint8(ScryptBlake2b512),
+		Algorithm: uint8(Scrypt),
 		Version:   uint8(1),
 		Salt:      d.salt,
 		Hash:      hashedPassword,
 	}, nil
-}
-
-// -----------------------------------------------------------------------------
-
-func (d *scryptDeriver) digest(data []byte) []byte {
-	d.mu.Lock()
-	defer d.mu.Unlock()
-	d.h.Reset()
-	_, err := d.h.Write(data)
-	if err != nil {
-		panic(err)
-	}
-	return d.h.Sum(nil)
 }

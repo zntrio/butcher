@@ -15,6 +15,7 @@
 // specific language governing permissions and limitations
 // under the License.
 
+//go:build gofuzz
 // +build gofuzz
 
 package hasher
@@ -24,9 +25,10 @@ import (
 )
 
 // Fuzz usage:
-//   go get github.com/dvyukov/go-fuzz/...
 //
-//   go-fuzz-build zntr.io/butcher/hasher && go-fuzz -bin=./hasher-fuzz.zip -workdir=/tmp/hasher-fuzz
+//	go get github.com/dvyukov/go-fuzz/...
+//
+//	go-fuzz-build github.com/zntrio/butcher/hasher && go-fuzz -bin=./hasher-fuzz.zip -workdir=/tmp/hasher-fuzz
 func Fuzz(data []byte) int {
 	b := bytes.NewReader(data)
 

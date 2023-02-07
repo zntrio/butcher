@@ -1,10 +1,18 @@
-module zntr.io/butcher
+module github.com/zntrio/butcher
 
-go 1.14
+go 1.19
+
+require (
+	github.com/stretchr/testify v1.8.1
+	golang.org/x/crypto v0.5.0
+)
+
+require github.com/x448/float16 v0.8.4 // indirect
 
 require (
 	github.com/davecgh/go-spew v1.1.1 // indirect
-	github.com/stretchr/testify v1.6.0
-	github.com/ugorji/go/codec v1.1.7
-	golang.org/x/crypto v0.0.0-20200510223506-06a226fb4e37
+	github.com/fxamacker/cbor/v2 v2.4.0
+	github.com/pmezard/go-difflib v1.0.0 // indirect
+	golang.org/x/sys v0.4.0 // indirect
+	gopkg.in/yaml.v3 v3.0.1 // indirect
 )

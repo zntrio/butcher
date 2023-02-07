@@ -19,65 +19,46 @@ package hasher
 
 import (
 	"encoding/base64"
+	"errors"
 	"fmt"
 	"io"
-	"io/ioutil"
-	"regexp"
 
-	"github.com/ugorji/go/codec"
-)
-
-var (
-	cborHandle = new(codec.CborHandle)
-	metaFormat = regexp.MustCompile("^[-A-Za-z0-9/+]{138}$")
+	cbor "github.com/fxamacker/cbor/v2"
 )
 
 // Metadata represents hasher result
 type Metadata struct {
-	// nolint
-	_struct bool `codec:",toarray"` // encode struct as an array
+	_ struct{} `cbor:",toarray"`
 
-	Algorithm uint8
-	Version   uint8
-	Salt      []byte
-	Hash      []byte
+	Algorithm uint8  `cbor:"1,keyasint"`
+	Version   uint8  `cbor:"2,keyasint"`
+	Salt      []byte `cbor:"3,keyasint"`
+	Hash      []byte `cbor:"4,keyasint"`
 }
 
 // Pack metadata as BASE64URL CBOR payload
 func (m *Metadata) Pack() (string, error) {
 	// Encode as CBOR
-	var bs []byte
-	if err := codec.NewEncoderBytes(&bs, cborHandle).Encode(m); err != nil {
-		return "", err
+	payload, err := cbor.Marshal(m)
+	if err != nil {
+		return "", fmt.Errorf("unable to serialize metadata: %w", err)
 	}
 
 	// Return encoded struct
-	return base64.RawStdEncoding.EncodeToString(bs), nil
+	return base64.RawStdEncoding.EncodeToString(payload), nil
 }
 
 // Decode metadata from string
 func Decode(r io.Reader) (*Metadata, error) {
-	// Read all
-	buf, err := ioutil.ReadAll(r)
-	if err != nil {
-		return nil, fmt.Errorf("butcher: unable to read encoded metadata: %v", err)
-	}
-
-	// Check format
-	if !metaFormat.Match(buf) {
-		return nil, fmt.Errorf("butcher: invalid hash format")
-	}
-
-	// Decode base64
-	input, err := base64.RawStdEncoding.DecodeString(string(buf))
-	if err != nil {
-		return nil, fmt.Errorf("butcher: unable to decode given metadata: %v", err)
+	// Check arguments
+	if r == nil {
+		return nil, errors.New("reader must not be nil")
 	}
 
 	// Decode as list
 	meta := &Metadata{}
-	if err := codec.NewDecoderBytes(input, cborHandle).Decode(meta); err != nil {
-		return nil, fmt.Errorf("butcher: unable to deserialize metadata: %v", err)
+	if err := cbor.NewDecoder(base64.NewDecoder(base64.RawStdEncoding, io.LimitReader(r, 138))).Decode(meta); err != nil {
+		return nil, fmt.Errorf("unable to decode metadata: %w", err)
 	}
 
 	// Rebuild metadata instance

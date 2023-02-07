@@ -19,10 +19,8 @@ package hasher
 
 import (
 	"crypto/sha512"
-	"hash"
 
 	"golang.org/x/crypto/argon2"
-	"golang.org/x/crypto/blake2b"
 )
 
 // Algorithm is the password hashing strategy code
@@ -33,8 +31,8 @@ const (
 	Argon2id = Algorithm(0x01)
 	// Pbkdf2HmacSha512 defines pbkdf2+hmac-sha512 hashing algorithm
 	Pbkdf2HmacSha512 = Algorithm(0x02)
-	// ScryptBlake2b512 defines scrypt+blake2b-512 hashing algorithm
-	ScryptBlake2b512 = Algorithm(0x03)
+	// Scrypt defines scrypt hashing algorithm
+	Scrypt = Algorithm(0x03)
 )
 
 const (
@@ -47,14 +45,8 @@ var Strategies = map[Algorithm]func(func() []byte) Strategy{
 		s, _ := newArgon2Deriver(salt(), argon2.IDKey)
 		return s
 	},
-	ScryptBlake2b512: func(salt func() []byte) Strategy {
-		s, _ := newScryptDeriver(func() hash.Hash {
-			h, err := blake2b.New512(nil)
-			if err != nil {
-				panic(err.Error())
-			}
-			return h
-		}, salt())
+	Scrypt: func(salt func() []byte) Strategy {
+		s, _ := newScryptDeriver(salt())
 		return s
 	},
 	Pbkdf2HmacSha512: func(salt func() []byte) Strategy {

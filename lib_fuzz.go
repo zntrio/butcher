@@ -15,14 +15,16 @@
 // specific language governing permissions and limitations
 // under the License.
 
+//go:build gofuzz
 // +build gofuzz
 
 package butcher
 
 // Fuzz usage:
-//   go get github.com/dvyukov/go-fuzz/...
 //
-//   go-fuzz-build zntr.io/butcher && go-fuzz -bin=./butcher-fuzz.zip -workdir=/tmp/butcher-fuzz
+//	go get github.com/dvyukov/go-fuzz/...
+//
+//	go-fuzz-build github.com/zntrio/butcher && go-fuzz -bin=./butcher-fuzz.zip -workdir=/tmp/butcher-fuzz
 func Fuzz(data []byte) int {
 	hResult, err := Hash(data)
 	if err != nil {

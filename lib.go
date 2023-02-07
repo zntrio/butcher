@@ -24,7 +24,7 @@ import (
 	"fmt"
 	"sync"
 
-	"zntr.io/butcher/hasher"
+	"github.com/zntrio/butcher/hasher"
 )
 
 // -----------------------------------------------------------------------------
